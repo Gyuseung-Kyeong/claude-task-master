@@ -5,7 +5,7 @@
 import { NoSuchModelError } from '@ai-sdk/provider';
 import { generateId } from '@ai-sdk/provider-utils';
 import { convertToClaudeCodeMessages } from './message-converter.js';
-import { extractJson } from './json-extractor.js';
+import { extractJson, isCompleteJson, completeTaskJson } from './json-extractor.js';
 import { createAPICallError, createAuthenticationError } from './errors.js';
 
 let query;
@@ -235,7 +235,19 @@ export class ClaudeCodeLanguageModel {
 
 		// Extract JSON if in object-json mode
 		if (options.mode?.type === 'object-json' && text) {
-			text = extractJson(text);
+			const extractedJson = extractJson(text);
+			
+			// Check if the extracted JSON is complete, if not try to complete it
+			if (!isCompleteJson(extractedJson)) {
+				try {
+					text = completeTaskJson(extractedJson);
+				} catch {
+					// If completion fails, use the extracted JSON as-is
+					text = extractedJson;
+				}
+			} else {
+				text = extractedJson;
+			}
 		}
 
 		return {
@@ -361,7 +373,17 @@ export class ClaudeCodeLanguageModel {
 
 							// In object-json mode, extract JSON and send the full text at once
 							if (options.mode?.type === 'object-json' && accumulatedText) {
-								const extractedJson = extractJson(accumulatedText);
+								let extractedJson = extractJson(accumulatedText);
+								
+								// Check if the extracted JSON is complete, if not try to complete it
+								if (!isCompleteJson(extractedJson)) {
+									try {
+										extractedJson = completeTaskJson(extractedJson);
+									} catch {
+										// If completion fails, use the extracted JSON as-is
+									}
+								}
+								
 								controller.enqueue({
 									type: 'text-delta',
 									textDelta: extractedJson

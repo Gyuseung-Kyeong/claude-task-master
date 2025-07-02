@@ -1,5 +1,6 @@
 import { generateText, streamText, generateObject } from 'ai';
 import { log } from '../../scripts/modules/index.js';
+import { extractJson, isCompleteJson, completeTaskJson } from './custom-sdk/claude-code/json-extractor.js';
 
 /**
  * Base class for all AI providers
@@ -208,6 +209,78 @@ export class BaseAIProvider {
 				}
 			};
 		} catch (error) {
+			// Check if this is a JSON parsing error
+			const errorMessage = error.message?.toLowerCase() || '';
+			if (
+				errorMessage.includes('could not parse the response') ||
+				errorMessage.includes('json parse error') ||
+				errorMessage.includes('no object generated') ||
+				errorMessage.includes('invalid json') ||
+				errorMessage.includes('unexpected end of json') ||
+				errorMessage.includes('malformed json')
+			) {
+				log('warn', `${this.name} JSON parsing error detected. Attempting to recover with fallback logic.`);
+				
+				// Try to extract JSON from the raw response if available
+				let fallbackObject = null;
+				
+				// Look for raw response text in the error details
+				const rawResponse = error.text || error.data?.text || error.responseBody;
+				if (rawResponse && typeof rawResponse === 'string') {
+					try {
+						// Try to extract and fix the JSON
+						const extractedJson = extractJson(rawResponse);
+						
+						if (!isCompleteJson(extractedJson)) {
+							// Try to complete the incomplete JSON
+							const completedJson = completeTaskJson(extractedJson);
+							fallbackObject = JSON.parse(completedJson);
+							log('info', `${this.name} successfully recovered from incomplete JSON using completion logic.`);
+						} else {
+							fallbackObject = JSON.parse(extractedJson);
+							log('info', `${this.name} successfully recovered from malformed JSON using extraction logic.`);
+						}
+					} catch (recoveryError) {
+						log('warn', `${this.name} JSON recovery failed: ${recoveryError.message}`);
+					}
+				}
+				
+				// If we have a recovered object, return it
+				if (fallbackObject) {
+					return {
+						object: fallbackObject,
+						usage: {
+							inputTokens: 0,
+							outputTokens: 0,
+							totalTokens: 0
+						}
+					};
+				}
+				
+				// If recovery failed, fall through to create a minimal fallback object
+				log('warn', `${this.name} creating minimal fallback object due to JSON parsing failure.`);
+				
+				// Extract user prompt from messages for fallback
+				const userMessage = params.messages.find(msg => msg.role === 'user')?.content || 'No prompt available';
+				const fallbackTaskObject = {
+					title: `Fallback Task: ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}`,
+					description: userMessage.length > 100 ? userMessage.substring(0, 100) + '...' : userMessage,
+					details: `Original prompt: ${userMessage}\n\nThis task was created as a fallback due to ${this.name} JSON parsing failure.\nError: ${error.message}\n\nPlease review and update this task manually.`,
+					testStrategy: `Manual verification required - created due to ${this.name} parsing failure`,
+					dependencies: []
+				};
+				
+				return {
+					object: fallbackTaskObject,
+					usage: {
+						inputTokens: 0,
+						outputTokens: 0,
+						totalTokens: 0
+					}
+				};
+			}
+			
+			// For non-JSON errors, use the standard error handling
 			this.handleError('object generation', error);
 		}
 	}

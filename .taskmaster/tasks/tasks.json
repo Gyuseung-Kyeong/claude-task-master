@@ -6579,11 +6579,49 @@
             "testStrategy": "Unit tests for authentication functions, integration tests for auth API endpoints, test password reset flow, verify JWT token generation and validation"
           }
         ]
+      },
+      {
+        "id": 105,
+        "title": "Fallback Task: Test task to verify JSON parsing fixes work correc...",
+        "description": "Test task to verify JSON parsing fixes work correctly",
+        "details": "Original prompt: Test task to verify JSON parsing fixes work correctly\n\nThis task was created as a fallback due to AI generation failure.\nError: AI service call failed for all configured roles.\n\nPlease review and update this task manually.",
+        "testStrategy": "Manual verification required - created due to AI failure",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 106,
+        "title": "Test Perplexity JSON parsing fix with complex refactoring requirements",
+        "description": "Create comprehensive tests to verify that Perplexity API integration correctly handles incomplete JSON responses when processing complex refactoring requirements that might trigger response truncation or malformed JSON.",
+        "details": "This task focuses on testing the JSON parsing robustness of the Perplexity integration when dealing with complex refactoring scenarios that could cause the AI to generate incomplete or malformed JSON responses.\n\nImplementation approach:\n1. **Create test scenarios for complex refactoring requirements**:\n   - Large codebase refactoring tasks that might exceed token limits\n   - Multi-file dependency changes that require extensive analysis\n   - Complex architectural changes that involve detailed explanations\n   - Edge cases where JSON structure might be incomplete due to response limits\n\n2. **Implement JSON parsing validation tests**:\n   - Test the json-extractor.js module with various malformed JSON scenarios\n   - Verify graceful handling of incomplete JSON responses from Perplexity\n   - Test fallback mechanisms when JSON parsing fails\n   - Ensure proper error handling and recovery strategies\n\n3. **Integration testing with Perplexity API**:\n   - Create mock responses that simulate incomplete JSON from Perplexity\n   - Test the language-model.js handling of truncated responses\n   - Verify that the system can recover and provide meaningful feedback\n   - Test retry mechanisms and fallback to Claude when Perplexity fails\n\n4. **Stress testing with complex prompts**:\n   - Generate prompts that are likely to cause JSON truncation\n   - Test with various complexity levels of refactoring requirements\n   - Verify consistent behavior across different types of incomplete responses",
+        "testStrategy": "1. **Unit Tests**: Test json-extractor.js with deliberately malformed JSON inputs including incomplete objects, missing closing braces, truncated arrays, and mixed valid/invalid JSON structures. Verify proper error handling and fallback responses.\n\n2. **Integration Tests**: Mock Perplexity API responses with incomplete JSON and verify the entire pipeline handles these gracefully. Test that the system properly falls back to Claude when Perplexity responses are unparseable.\n\n3. **End-to-End Tests**: Create complex refactoring task scenarios and submit them through the Perplexity integration. Monitor for JSON parsing failures and verify that users receive meaningful error messages or fallback responses.\n\n4. **Performance Tests**: Test with increasingly complex prompts to identify the threshold where JSON responses become incomplete, and verify the system handles these edge cases appropriately.\n\n5. **Regression Tests**: Ensure that the JSON parsing fixes don't break existing functionality for well-formed JSON responses from both Perplexity and Claude.",
+        "status": "pending",
+        "dependencies": [
+          9
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 107,
+        "title": "Create Comprehensive Error Handling System for AI Provider Failures",
+        "description": "Implement a robust error handling system that manages AI provider failures through retry mechanisms, circuit breakers, and graceful degradation strategies.",
+        "details": "Build a comprehensive error handling system including:\n- Implement exponential backoff retry mechanism with configurable max attempts and delay intervals\n- Create circuit breaker pattern to prevent cascading failures when AI providers are consistently unavailable\n- Design graceful degradation strategies that fall back to alternative providers or cached responses\n- Add error classification system to distinguish between retryable and non-retryable errors\n- Implement health check monitoring for AI provider endpoints\n- Create error recovery workflows that automatically attempt to restore service\n- Add comprehensive error logging and metrics collection for monitoring\n- Design timeout handling for long-running AI operations\n- Implement rate limiting protection to prevent overwhelming providers\n- Create error notification system for critical failures\n- Add configuration options for different error handling strategies per provider\n- Implement fallback task queue for operations that fail multiple times",
+        "testStrategy": "Test error handling by simulating various failure scenarios including network timeouts, API rate limiting, authentication failures, and service unavailability. Verify retry mechanisms work correctly with exponential backoff. Test circuit breaker opens and closes appropriately based on failure thresholds. Validate graceful degradation maintains system functionality when primary providers fail. Test error recovery workflows restore service automatically. Verify comprehensive logging captures all error scenarios for debugging and monitoring.",
+        "status": "pending",
+        "dependencies": [
+          16,
+          17
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-06-13T23:52:56.848Z",
-      "updated": "2025-06-14T15:19:05.130Z",
+      "updated": "2025-07-02T02:27:25.452Z",
       "description": "Main tag for the taskmaster project"
     }
   },

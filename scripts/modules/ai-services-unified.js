@@ -660,6 +660,19 @@ async function _unifiedServiceRunner(serviceType, params) {
 					log('error', `[Tool Support Error] ${specificErrorMsg}`);
 					throw new Error(specificErrorMsg);
 				}
+				
+				// Check for JSON parsing related errors
+				if (
+					lowerCaseMessage.includes('could not parse the response') ||
+					lowerCaseMessage.includes('json parse error') ||
+					lowerCaseMessage.includes('no object generated') ||
+					lowerCaseMessage.includes('invalid json') ||
+					lowerCaseMessage.includes('unexpected end of json') ||
+					lowerCaseMessage.includes('malformed json')
+				) {
+					log('warn', `[JSON Parse Error] Provider '${providerName || 'unknown'}' returned malformed JSON for role '${currentRole}'. This may be due to incomplete AI response. The error will be handled with fallback task creation.`);
+					// Don't throw here - let the calling code handle this with fallback logic
+				}
 			}
 		}
 	}

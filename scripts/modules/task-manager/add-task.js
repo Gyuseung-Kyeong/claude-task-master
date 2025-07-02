@@ -470,8 +470,25 @@ async function addTask(
 				) {
 					taskData = aiServiceResponse.mainResult.object;
 				} else {
-					throw new Error('AI service did not return a valid task object.');
+					// Fallback: Create a minimal task object from the prompt if AI response is invalid
+					report('AI response was invalid, creating fallback task object from prompt.', 'warn');
+					taskData = {
+						title: `Task from prompt: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`,
+						description: prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt,
+						details: `Original prompt: ${prompt}\n\nPlease review and update this task as the AI response was incomplete or invalid.`,
+						testStrategy: 'Manual verification required - AI response was incomplete',
+						dependencies: [] // Ensure dependencies is always an array
+					};
 				}
+
+				// Ensure taskData has all required fields with proper defaults
+				taskData = {
+					title: taskData.title || 'Generated Task',
+					description: taskData.description || 'Task description unavailable',
+					details: taskData.details || 'Please add task details',
+					testStrategy: taskData.testStrategy || 'Manual verification required',
+					dependencies: Array.isArray(taskData.dependencies) ? taskData.dependencies : []
+				};
 
 				report('Successfully generated task data from AI.', 'success');
 
@@ -494,7 +511,16 @@ async function addTask(
 					'debug'
 				);
 				report(`Error generating task with AI: ${error.message}`, 'error');
-				throw error; // Re-throw error after logging
+				
+				// Instead of throwing error, create fallback task data
+				report('Creating fallback task due to AI generation failure...', 'warn');
+				taskData = {
+					title: `Fallback Task: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`,
+					description: prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt,
+					details: `Original prompt: ${prompt}\n\nThis task was created as a fallback due to AI generation failure.\nError: ${error.message}\n\nPlease review and update this task manually.`,
+					testStrategy: 'Manual verification required - created due to AI failure',
+					dependencies: [] // Ensure dependencies is always an array
+				};
 			} finally {
 				report('DEBUG: generateObjectService finally block reached.', 'debug');
 				// Clean up if somehow still running
